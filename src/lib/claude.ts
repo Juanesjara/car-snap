@@ -1,6 +1,6 @@
-// WARNING: API key is exposed on the client (VITE_ prefix).
-// Acceptable for personal/local use only. For production, proxy through a backend route.
-import Anthropic from '@anthropic-ai/sdk';
+// Usando Google Gemini 1.5 Flash (gratis).
+// Para cambiar a Claude: reemplaza con @anthropic-ai/sdk y usa VITE_ANTHROPIC_API_KEY.
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { CarSpecs } from '../types';
 
 const SYSTEM_PROMPT =
@@ -12,40 +12,31 @@ const SYSTEM_PROMPT =
   'If you cannot identify the car, return { "error": "No car detected" }. ' +
   'All string values in Spanish.';
 
-const client = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GOOGLE_AI_KEY as string);
 
 export async function analyzeCarImage(
   base64: string,
   mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/jpeg',
 ): Promise<CarSpecs> {
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mediaType, data: base64 },
-          },
-          { type: 'text', text: 'Identifica este auto y devuelve el JSON.' },
-        ],
-      },
-    ],
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    systemInstruction: SYSTEM_PROMPT,
   });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+  const result = await model.generateContent([
+    { inlineData: { data: base64, mimeType: mediaType } },
+    'Identifica este auto y devuelve el JSON.',
+  ]);
+
+  const text = result.response.text().trim();
 
   let parsed: Record<string, unknown>;
   try {
-    parsed = JSON.parse(text) as Record<string, unknown>;
+    // Strip markdown fences if Gemini wraps the response anyway
+    const clean = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    parsed = JSON.parse(clean) as Record<string, unknown>;
   } catch {
-    throw new Error('La respuesta de Claude no es JSON válido');
+    throw new Error('La respuesta de Gemini no es JSON válido');
   }
 
   if (parsed.error) {

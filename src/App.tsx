@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Capture } from './pages/Capture';
 import { History } from './pages/History';
+import { MapView } from './pages/MapView';
 
-type Tab = 'capture' | 'history';
+type Tab = 'capture' | 'history' | 'map';
 
 export function App() {
   const [tab, setTab] = useState<Tab>('capture');
@@ -19,7 +20,9 @@ export function App() {
 
       {/* Page content — fills space above nav */}
       <main className="flex-1 overflow-hidden">
-        {tab === 'capture' ? <Capture /> : <History />}
+        {tab === 'capture' && <Capture />}
+        {tab === 'history' && <History />}
+        {tab === 'map' && <MapView />}
       </main>
 
       {/* Bottom navigation */}
@@ -41,6 +44,15 @@ export function App() {
         >
           <span className="text-xl">🗂️</span>
           Historial
+        </button>
+        <button
+          onClick={() => setTab('map')}
+          className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+            tab === 'map' ? 'text-violet-400' : 'text-gray-500 hover:text-gray-300'
+          }`}
+        >
+          <span className="text-xl">🗺️</span>
+          Mapa
         </button>
       </nav>
     </div>

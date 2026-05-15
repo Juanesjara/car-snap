@@ -42,14 +42,16 @@ export function SightingDetail({ sighting, onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-gray-950/90 backdrop-blur flex items-center gap-3 px-4 py-4 border-b border-gray-800 shrink-0">
-        <button
-          onClick={onClose}
-          className="text-violet-400 font-medium text-sm"
-        >
-          ← Atrás
-        </button>
-        <p className="font-semibold text-white truncate flex-1">{label}</p>
+      <div className="sticky top-0 bg-gray-950/90 backdrop-blur border-b border-gray-800 shrink-0 pt-safe">
+        <div className="flex items-center gap-3 px-4 py-4">
+          <button
+            onClick={onClose}
+            className="text-violet-400 font-medium text-sm"
+          >
+            ← Atrás
+          </button>
+          <p className="font-semibold text-white truncate flex-1">{label}</p>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 p-4">

@@ -131,12 +131,6 @@ export function Capture() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      {/* Header */}
-      <div className="px-4 pt-safe pt-6 pb-4 shrink-0">
-        <h1 className="text-2xl font-bold text-white mt-8">CarSnap</h1>
-        <p className="text-gray-500 text-sm">Identifica autos con IA</p>
-      </div>
-
       {/* Content */}
       {stage === 'pick' && <PhotoPicker onPhoto={handlePhoto} />}
 
@@ -149,7 +143,7 @@ export function Capture() {
           />
           <div className="flex flex-col items-center gap-3 text-gray-400">
             <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm">Analizando con Claude Vision…</p>
+            <p className="text-sm">Analizando…</p>
           </div>
         </div>
       )}

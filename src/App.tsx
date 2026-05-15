@@ -9,6 +9,14 @@ export function App() {
 
   return (
     <div className="flex flex-col h-full bg-gray-950">
+      {/* App header */}
+      <div className="pt-safe shrink-0">
+        <div className="px-4 pt-4 pb-4">
+          <h1 className="text-2xl font-bold text-white">CarSnap</h1>
+          <p className="text-gray-500 text-sm">Identifica autos con IA</p>
+        </div>
+      </div>
+
       {/* Page content — fills space above nav */}
       <main className="flex-1 overflow-hidden">
         {tab === 'capture' ? <Capture /> : <History />}

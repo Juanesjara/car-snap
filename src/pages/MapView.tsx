@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { getSightings } from '../lib/supabase';
+import { getSightings } from '../lib/api';
 import type { Sighting } from '../types';
 
 // Vite no sirve los assets de Leaflet correctamente por defecto.

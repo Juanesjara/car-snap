@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SightingCard } from '../components/SightingCard';
 import { SightingDetail } from '../components/SightingDetail';
-import { getSightings } from '../lib/supabase';
+import { getSightings } from '../lib/api';
 import type { Sighting } from '../types';
 
 export function History() {

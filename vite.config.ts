@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // En local no corren las funciones de Vercel: /api va al despliegue real.
+  server: {
+    proxy: {
+      '/api': { target: 'https://car-snap-psi.vercel.app', changeOrigin: true },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -13,8 +19,8 @@ export default defineConfig({
         name: 'CarSnap',
         short_name: 'CarSnap',
         description: 'Identifica y guarda autos con IA',
-        theme_color: '#0f0f13',
-        background_color: '#0f0f13',
+        theme_color: '#0B0F17',
+        background_color: '#0B0F17',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',

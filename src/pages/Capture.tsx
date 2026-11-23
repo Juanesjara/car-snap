@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { AlertIcon } from '../components/icons';
 import { PhotoPicker } from '../components/PhotoPicker';
 import { AnalysisResult } from '../components/AnalysisResult';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Toast } from '../components/Toast';
 import { analyzeCarImage, saveSighting } from '../lib/api';
 import { extractMetadata } from '../lib/exif';
@@ -110,7 +112,7 @@ export function Capture() {
       setManualLat('');
       setManualLng('');
       setStage('pick');
-      showToast('Auto guardado correctamente');
+      showToast('Auto guardado');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al guardar');
       setStage('result');
@@ -127,21 +129,33 @@ export function Capture() {
     setStage('pick');
   }
 
+  const heading =
+    stage === 'pick'
+      ? { title: 'Capturar', subtitle: 'Identifica un auto con una foto' }
+      : { title: 'Identificando', subtitle: undefined };
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      {/* Content */}
+      <ScreenHeader title={heading.title} subtitle={heading.subtitle} brand={stage === 'pick'} />
+
       {stage === 'pick' && <PhotoPicker onPhoto={handlePhoto} />}
 
       {stage === 'loading' && photo && (
-        <div className="flex flex-col items-center gap-6 px-4 py-8">
-          <img
-            src={photo.previewUrl}
-            alt="Foto seleccionada"
-            className="w-full max-w-sm h-56 object-cover rounded-xl"
-          />
-          <div className="flex flex-col items-center gap-3 text-gray-400">
-            <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm">Analizando…</p>
+        <div className="flex flex-col gap-5 px-5 pb-6 animate-fade-up">
+          <div className="relative">
+            <img
+              src={photo.previewUrl}
+              alt="Foto seleccionada"
+              className="w-full h-56 object-cover rounded-2xl"
+            />
+            <div className="absolute inset-0 rounded-2xl bg-base/55 flex flex-col items-center justify-center gap-3">
+              <div
+                className="w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin"
+                role="status"
+                aria-label="Analizando la foto"
+              />
+              <p className="text-sm text-ink font-medium">Analizando…</p>
+            </div>
           </div>
         </div>
       )}
@@ -149,21 +163,24 @@ export function Capture() {
       {stage === 'result' && photo && (
         <>
           {error ? (
-            <div className="flex flex-col items-center gap-4 px-4 py-8">
+            <div className="flex flex-col gap-4 px-5 pb-6">
               <img
                 src={photo.previewUrl}
                 alt="Foto"
-                className="w-full max-w-sm h-48 object-cover rounded-xl opacity-50"
+                className="w-full h-44 object-cover rounded-2xl opacity-40"
               />
-              <div className="bg-red-900/40 border border-red-700 rounded-xl px-4 py-3 w-full max-w-sm">
-                <p className="text-red-400 text-sm font-medium">Error</p>
-                <p className="text-red-300 text-sm mt-1">{error}</p>
+              <div className="bg-red-950/60 border border-red-800/70 rounded-2xl p-4 flex gap-3">
+                <AlertIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-red-200 text-sm font-semibold">No se pudo identificar</p>
+                  <p className="text-red-300/90 text-sm mt-1">{error}</p>
+                </div>
               </div>
               <button
                 onClick={handleCancel}
-                className="text-gray-400 hover:text-white transition-colors text-sm"
+                className="w-full bg-surface border border-line active:bg-raised text-ink font-semibold py-3.5 rounded-2xl transition-colors duration-200"
               >
-                Volver a intentar
+                Intentar con otra foto
               </button>
             </div>
           ) : specs ? (

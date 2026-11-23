@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { CameraIcon, GalleryIcon } from './icons';
 
 interface Props {
   onPhoto: (file: File, source: 'camera' | 'gallery') => void;
@@ -15,8 +16,7 @@ export function PhotoPicker({ onPhoto }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 p-8">
-      {/* Hidden inputs */}
+    <div className="flex flex-col gap-3 px-5 pb-6">
       <input
         ref={cameraRef}
         type="file"
@@ -33,24 +33,30 @@ export function PhotoPicker({ onPhoto }: Props) {
         onChange={handle('gallery')}
       />
 
-      {/* Camera button */}
       <button
         onClick={() => cameraRef.current?.click()}
-        className="w-full max-w-xs flex flex-col items-center gap-3 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold py-6 rounded-2xl transition-colors"
+        className="w-full flex items-center gap-4 bg-brand-600 active:bg-brand-700 text-white p-4 rounded-2xl transition-colors duration-200 text-left"
       >
-        <span className="text-4xl">📷</span>
-        <span className="text-lg">Cámara</span>
-        <span className="text-xs text-violet-200 font-normal">Abre la cámara trasera</span>
+        <span className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+          <CameraIcon className="w-6 h-6" strokeWidth={2} />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-semibold">Tomar foto</span>
+          <span className="block text-[13px] text-blue-100/80">Abre la cámara trasera</span>
+        </span>
       </button>
 
-      {/* Gallery button */}
       <button
         onClick={() => galleryRef.current?.click()}
-        className="w-full max-w-xs flex flex-col items-center gap-3 bg-gray-800 hover:bg-gray-700 active:bg-gray-900 text-white font-semibold py-6 rounded-2xl transition-colors border border-gray-700"
+        className="w-full flex items-center gap-4 bg-surface border border-line active:bg-raised text-ink p-4 rounded-2xl transition-colors duration-200 text-left"
       >
-        <span className="text-4xl">🖼️</span>
-        <span className="text-lg">Galería</span>
-        <span className="text-xs text-gray-400 font-normal">Importa desde tus fotos</span>
+        <span className="w-12 h-12 rounded-xl bg-raised flex items-center justify-center shrink-0 text-brand-400">
+          <GalleryIcon className="w-6 h-6" strokeWidth={2} />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-semibold">Elegir de la galería</span>
+          <span className="block text-[13px] text-muted">Usa la ubicación guardada en la foto</span>
+        </span>
       </button>
     </div>
   );

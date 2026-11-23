@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { CarIcon, SearchIcon } from '../components/icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { SightingCard } from '../components/SightingCard';
 import { SightingDetail } from '../components/SightingDetail';
 import { getSightings } from '../lib/api';
@@ -24,50 +26,59 @@ export function History() {
     return s.marca?.toLowerCase().includes(q) || s.modelo?.toLowerCase().includes(q);
   });
 
+  const count = sightings.length;
+
   return (
     <>
-      <div className="flex flex-col h-full overflow-y-auto">
-        {/* Header */}
-        <div className="px-4 pt-6 pb-4 shrink-0">
-          <h1 className="text-2xl font-bold text-white">Historial</h1>
-          <p className="text-gray-500 text-sm">{sightings.length} autos guardados</p>
-        </div>
+      <div className="flex flex-col h-full">
+        <ScreenHeader
+          title="Historial"
+          subtitle={loading ? 'Cargando…' : `${count} ${count === 1 ? 'auto' : 'autos'} guardados`}
+        />
 
-        {/* Search */}
-        <div className="px-4 pb-3 shrink-0">
-          <input
-            type="search"
-            placeholder="Buscar por marca o modelo…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-gray-900 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-violet-500"
-          />
-        </div>
+        {count > 0 && (
+          <div className="px-5 pb-4 shrink-0">
+            <div className="relative">
+              <SearchIcon className="w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-faint pointer-events-none" />
+              <input
+                type="search"
+                aria-label="Buscar por marca o modelo"
+                placeholder="Buscar por marca o modelo"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-surface border border-line text-ink placeholder-faint rounded-xl pl-10 pr-4 py-3 text-sm outline-none transition-colors focus:border-brand-500"
+              />
+            </div>
+          </div>
+        )}
 
-        {/* List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex-1 overflow-y-auto px-5 pb-6">
           {loading && (
-            <div className="flex justify-center py-12">
-              <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex justify-center py-16" role="status" aria-label="Cargando autos">
+              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
           {error && (
-            <div className="bg-red-900/40 border border-red-700 rounded-xl px-4 py-3 mt-4">
-              <p className="text-red-300 text-sm">{error}</p>
+            <div className="bg-red-950/60 border border-red-800/70 rounded-xl px-4 py-3">
+              <p className="text-red-200 text-sm">{error}</p>
             </div>
           )}
 
           {!loading && !error && filtered.length === 0 && (
-            <div className="flex flex-col items-center gap-3 py-16 text-gray-600">
-              <span className="text-5xl">🚗</span>
-              <p className="text-sm">
-                {search ? 'Sin resultados' : 'Todavía no has guardado ningún auto'}
+            <div className="flex flex-col items-center gap-3 py-20 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-surface border border-line flex items-center justify-center text-faint">
+                <CarIcon className="w-7 h-7" />
+              </div>
+              <p className="text-muted text-sm max-w-[22ch]">
+                {search
+                  ? `Ningún auto coincide con "${search}"`
+                  : 'Todavía no has guardado ningún auto'}
               </p>
             </div>
           )}
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
             {filtered.map((s) => (
               <SightingCard key={s.id} sighting={s} onClick={() => setSelected(s)} />
             ))}
@@ -75,9 +86,7 @@ export function History() {
         </div>
       </div>
 
-      {selected && (
-        <SightingDetail sighting={selected} onClose={() => setSelected(null)} />
-      )}
+      {selected && <SightingDetail sighting={selected} onClose={() => setSelected(null)} />}
     </>
   );
 }

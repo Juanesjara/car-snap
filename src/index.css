@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,7 +8,16 @@
     height: 100%;
   }
   body {
-    @apply bg-gray-950 text-white overscroll-none;
+    @apply bg-base text-ink overscroll-none antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  /* Los números de coordenadas y años no deben bailar de ancho. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Foco visible solo para teclado, nunca removido del todo. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-base;
   }
 }
 
@@ -20,3 +30,41 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Leaflet: los popups y la atribución vienen en claro por defecto. */
+.leaflet-container {
+  background: #121826;
+  font-family: inherit;
+}
+/* Mapa oscuro sin depender de un proveedor con API key: se invierte solo la capa
+   de tiles, nunca los marcadores ni los popups. */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(185deg) brightness(0.96) contrast(0.82) saturate(0.35);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  @apply bg-raised text-ink border border-line;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.875rem;
+}
+.leaflet-popup-content {
+  margin: 0.75rem;
+}
+.leaflet-popup-close-button {
+  @apply text-faint !important;
+}
+.leaflet-control-attribution {
+  @apply bg-surface/85 text-faint border-t border-line;
+}
+.leaflet-control-attribution a {
+  @apply text-brand-400;
+}

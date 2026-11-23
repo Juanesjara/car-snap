@@ -1,3 +1,5 @@
+import { ArrowLeftIcon, PinIcon } from './icons';
+import { SpecList } from './SpecList';
 import type { Sighting } from '../types';
 
 interface Props {
@@ -5,66 +7,41 @@ interface Props {
   onClose: () => void;
 }
 
-const ROW = 'flex justify-between gap-4 py-2 border-b border-gray-800 last:border-0';
-const LABEL = 'text-gray-500 text-sm shrink-0';
-const VALUE = 'text-gray-100 text-sm text-right';
-
 export function SightingDetail({ sighting, onClose }: Props) {
-  const date = sighting.taken_at
-    ? new Date(sighting.taken_at)
-    : new Date(sighting.created_at);
-
+  const date = sighting.taken_at ? new Date(sighting.taken_at) : new Date(sighting.created_at);
   const specs = sighting.specs;
   const label = [sighting.marca, sighting.modelo].filter(Boolean).join(' ') || 'Auto desconocido';
 
-  const mapsUrl =
-    sighting.latitude != null && sighting.longitude != null
-      ? `maps://maps.apple.com/?q=${sighting.latitude},${sighting.longitude}`
-      : null;
-
-  const basicRows: [string, string | number | null | undefined][] = [
-    ['Marca', sighting.marca],
-    ['Modelo', sighting.modelo],
-    ['Año', sighting.año],
-  ];
-
-  const specRows: [string, string | null | undefined][] = specs
-    ? [
-        ['Motor', specs.motor],
-        ['Transmisión', specs.transmision],
-        ['Tracción', specs.traccion],
-        ['Carrocería', specs.carroceria],
-        ['Color', specs.color],
-        ['País de origen', specs.pais_origen],
-      ]
-    : [];
+  const hasCoords = sighting.latitude != null && sighting.longitude != null;
+  const mapsUrl = hasCoords
+    ? `https://maps.apple.com/?q=${sighting.latitude},${sighting.longitude}`
+    : null;
 
   return (
-    <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col overflow-y-auto">
-      {/* Header */}
-      <div className="sticky top-0 bg-gray-950/90 backdrop-blur border-b border-gray-800 shrink-0 pt-safe">
-        <div className="flex items-center gap-3 px-4 py-4">
+    <div className="fixed inset-0 bg-base z-50 flex flex-col overflow-y-auto">
+      {/* Overlay a pantalla completa: lleva su propio safe area. */}
+      <div className="sticky top-0 z-10 bg-base/85 backdrop-blur border-b border-line shrink-0 pt-safe">
+        <div className="flex items-center gap-2 px-2 py-2">
           <button
             onClick={onClose}
-            className="text-violet-400 font-medium text-sm"
+            aria-label="Volver al historial"
+            className="w-11 h-11 flex items-center justify-center rounded-xl text-brand-400 active:bg-surface transition-colors duration-200 shrink-0"
           >
-            ← Atrás
+            <ArrowLeftIcon className="w-5 h-5" strokeWidth={2} />
           </button>
-          <p className="font-semibold text-white truncate flex-1">{label}</p>
+          <h1 className="font-semibold text-ink truncate">{label}</h1>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 p-4">
-        {/* Photo */}
+      <div className="flex flex-col gap-4 px-5 py-5">
         <img
           src={sighting.photo_url}
           alt={label}
-          className="w-full rounded-xl object-cover max-h-72"
+          className="w-full rounded-2xl object-cover max-h-72 bg-surface"
         />
 
-        {/* Date + source */}
-        <div className="flex items-center gap-2 text-gray-500 text-sm">
-          <span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-muted text-sm">
             {date.toLocaleDateString('es-ES', {
               weekday: 'long',
               day: 'numeric',
@@ -72,67 +49,51 @@ export function SightingDetail({ sighting, onClose }: Props) {
               year: 'numeric',
             })}
           </span>
-          <span className="bg-gray-800 px-2 py-0.5 rounded-full text-xs capitalize">
+          <span className="bg-surface border border-line text-faint px-2.5 py-0.5 rounded-full text-xs">
             {sighting.source === 'camera' ? 'Cámara' : 'Galería'}
           </span>
         </div>
 
-        {/* Basic info */}
-        <div className="bg-gray-900 rounded-xl px-4 py-2">
-          <p className="text-violet-400 text-xs font-semibold uppercase tracking-wide pt-2 pb-1">
-            Identificación
-          </p>
-          {basicRows.map(([label, val]) =>
-            val != null ? (
-              <div key={label} className={ROW}>
-                <span className={LABEL}>{label}</span>
-                <span className={VALUE}>{val}</span>
-              </div>
-            ) : null,
-          )}
-        </div>
+        <SpecList
+          title="Identificación"
+          rows={[
+            ['Marca', sighting.marca],
+            ['Modelo', sighting.modelo],
+            ['Año', sighting.año],
+          ]}
+        />
 
-        {/* Specs */}
-        {specRows.some(([, v]) => v != null) && (
-          <div className="bg-gray-900 rounded-xl px-4 py-2">
-            <p className="text-violet-400 text-xs font-semibold uppercase tracking-wide pt-2 pb-1">
-              Especificaciones
-            </p>
-            {specRows.map(([label, val]) =>
-              val ? (
-                <div key={label} className={ROW}>
-                  <span className={LABEL}>{label}</span>
-                  <span className={VALUE}>{val}</span>
-                </div>
-              ) : null,
-            )}
-            {specs?.notas && (
-              <div className="py-2">
-                <p className={LABEL}>Notas</p>
-                <p className="text-gray-300 text-sm mt-1">{specs.notas}</p>
-              </div>
-            )}
-          </div>
-        )}
+        <SpecList
+          title="Especificaciones"
+          rows={[
+            ['Motor', specs?.motor],
+            ['Transmisión', specs?.transmision],
+            ['Tracción', specs?.traccion],
+            ['Carrocería', specs?.carroceria],
+            ['Color', specs?.color],
+            ['País de origen', specs?.pais_origen],
+          ]}
+          notes={specs?.notas}
+        />
 
-        {/* Location */}
         {mapsUrl && (
-          <div className="bg-gray-900 rounded-xl px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-violet-400 text-xs font-semibold uppercase tracking-wide">
+          <section className="bg-surface border border-line rounded-2xl p-4 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="text-brand-400 text-[11px] font-semibold uppercase tracking-[0.12em]">
                 Ubicación
-              </p>
-              <p className="text-gray-400 text-sm mt-0.5">
+              </h2>
+              <p className="text-muted text-sm mt-1 tnum truncate">
                 {sighting.latitude!.toFixed(5)}, {sighting.longitude!.toFixed(5)}
               </p>
             </div>
             <a
               href={mapsUrl}
-              className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+              className="inline-flex items-center gap-1.5 bg-brand-600 active:bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors duration-200 shrink-0"
             >
-              Abrir mapa
+              <PinIcon className="w-4 h-4" strokeWidth={2} />
+              Ver mapa
             </a>
-          </div>
+          </section>
         )}
       </div>
     </div>

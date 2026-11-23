@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { authorized, BUCKET, decodeJpeg, json, supabase } from './_lib.js';
+import { BUCKET, decodeJpeg, json, supabase } from './_lib.js';
 
 const SPEC_KEYS = ['motor', 'transmision', 'traccion', 'carroceria', 'color', 'pais_origen', 'notas'];
 
@@ -10,9 +10,7 @@ const num = (v: unknown, min: number, max: number) =>
 // Filas viejas guardaban la URL pública completa; las nuevas solo la ruta.
 const toPath = (photoUrl: string) => photoUrl.split(`/${BUCKET}/`).pop()!;
 
-export async function GET(req: Request): Promise<Response> {
-  if (!authorized(req)) return json({ error: 'No autorizado' }, 401);
-
+export async function GET(): Promise<Response> {
   const { data, error } = await supabase
     .from('car_sightings')
     .select('*')
@@ -29,8 +27,6 @@ export async function GET(req: Request): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  if (!authorized(req)) return json({ error: 'No autorizado' }, 401);
-
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return json({ error: 'Cuerpo inválido' }, 400);
 

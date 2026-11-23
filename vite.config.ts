@@ -8,6 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png'],
+      workbox: { navigateFallbackDenylist: [/^\/api\//] },
       manifest: {
         name: 'CarSnap',
         short_name: 'CarSnap',

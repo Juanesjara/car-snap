@@ -1,67 +1,28 @@
-const SUPPORTED = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-const MAX_DIM = 2048;
+const MAX_DIM = 1600;
+const QUALITY = 0.85;
 
-export interface ImageData {
-  base64: string;
-  mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
-}
-
-export function fileToBase64(file: File): Promise<ImageData> {
-  if (SUPPORTED.has(file.type)) {
-    return readDirect(file);
-  }
-  // HEIC / HEIF and other formats: convert via canvas
-  return convertViaCanvas(file);
-}
-
-function readDirect(file: File): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve({
-        base64: result.split(',')[1],
-        mediaType: file.type as ImageData['mediaType'],
-      });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function convertViaCanvas(file: File): Promise<ImageData> {
+// Toda foto (JPEG, PNG, HEIC…) se redimensiona y re-codifica a JPEG:
+// cabe en el límite de 4.5 MB de Vercel y elimina el EXIF (GPS) del archivo guardado.
+export async function fileToJpegBase64(file: File): Promise<string> {
   const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(url);
+    const ratio = Math.min(1, MAX_DIM / img.naturalWidth, MAX_DIM / img.naturalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * ratio);
+    canvas.height = Math.round(img.naturalHeight * ratio);
+    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', QUALITY).split(',')[1];
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-      if (w > MAX_DIM || h > MAX_DIM) {
-        const ratio = Math.min(MAX_DIM / w, MAX_DIM / h);
-        w = Math.round(w * ratio);
-        h = Math.round(h * ratio);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) { reject(new Error('Canvas conversion failed')); return; }
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve({ base64: result.split(',')[1], mediaType: 'image/jpeg' });
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        },
-        'image/jpeg',
-        0.85,
-      );
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
-    img.src = url;
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+    img.src = src;
   });
 }

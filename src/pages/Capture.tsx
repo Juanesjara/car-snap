@@ -2,16 +2,15 @@ import { useState } from 'react';
 import { PhotoPicker } from '../components/PhotoPicker';
 import { AnalysisResult } from '../components/AnalysisResult';
 import { Toast } from '../components/Toast';
-import { analyzeCarImage } from '../lib/claude';
+import { analyzeCarImage, saveSighting } from '../lib/api';
 import { extractMetadata } from '../lib/exif';
-import { fileToBase64 } from '../lib/image';
-import { uploadPhoto, saveSighting } from '../lib/supabase';
+import { fileToJpegBase64 } from '../lib/image';
 import type { CarSpecs } from '../types';
 
 type Stage = 'pick' | 'loading' | 'result' | 'saving';
 
 interface PhotoState {
-  file: File;
+  jpeg: string | null;
   previewUrl: string;
   source: 'camera' | 'gallery';
   lat: number | null;
@@ -63,12 +62,12 @@ export function Capture() {
       }
     }
 
-    setPhoto({ file, previewUrl, source, lat, lng, date });
+    setPhoto({ jpeg: null, previewUrl, source, lat, lng, date });
 
     try {
-      const { base64, mediaType } = await fileToBase64(file);
-      const result = await analyzeCarImage(base64, mediaType);
-      setSpecs(result);
+      const jpeg = await fileToJpegBase64(file);
+      setPhoto((p) => p && { ...p, jpeg });
+      setSpecs(await analyzeCarImage(jpeg));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al analizar la imagen');
     }
@@ -77,17 +76,16 @@ export function Capture() {
   }
 
   async function handleSave() {
-    if (!photo || !specs) return;
+    if (!photo?.jpeg || !specs) return;
     setStage('saving');
 
     try {
-      const photoUrl = await uploadPhoto(photo.file);
-
-      const finalLat = photo.lat ?? (manualLat ? parseFloat(manualLat) : null);
-      const finalLng = photo.lng ?? (manualLng ? parseFloat(manualLng) : null);
+      const parse = (v: string) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : null);
+      const finalLat = photo.lat ?? parse(manualLat);
+      const finalLng = photo.lng ?? parse(manualLng);
 
       await saveSighting({
-        photo_url: photoUrl,
+        photo: photo.jpeg,
         marca: specs.marca,
         modelo: specs.modelo,
         año: specs.año,

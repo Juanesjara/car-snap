@@ -1,25 +1,40 @@
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { getSightings } from '../lib/api';
 import type { Sighting } from '../types';
 
-// Vite no sirve los assets de Leaflet correctamente por defecto.
-// Hay que apuntar los iconos del marker a la carpeta de node_modules manualmente.
-function fixLeafletIcons() {
-  delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  });
-}
-
-fixLeafletIcons();
+// Marcador propio en vez de los PNG de Leaflet: mismo azul que el resto de la app
+// y sin descargar imágenes desde unpkg.
+const PIN = L.divIcon({
+  className: '',
+  html: `<svg viewBox="0 0 24 24" width="30" height="30" fill="#2563EB" stroke="#0B0F17" stroke-width="1.25"
+    style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))">
+    <path d="M20 10.5c0 5.5-8 11.5-8 11.5s-8-6-8-11.5a8 8 0 0 1 16 0Z"/>
+    <circle cx="12" cy="10.5" r="3" fill="#0B0F17" stroke="none"/>
+  </svg>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 29],
+  popupAnchor: [0, -27],
+});
 
 // Colombia como centro por defecto si no hay sightings con ubicación
 const DEFAULT_CENTER: [number, number] = [4.711, -74.0721];
 const DEFAULT_ZOOM = 6;
+
+// Leaflet mide el contenedor al montarse, antes de que flex le dé altura, y queda
+// descentrado. invalidateSize lo recalcula; fitBounds encuadra todos los marcadores.
+function FitToMarkers({ points }: { points: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    if (points.length > 0) {
+      map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 15 });
+    }
+  }, [map, points]);
+  return null;
+}
 
 export function MapView() {
   const [sightings, setSightings] = useState<Sighting[]>([]);
@@ -34,98 +49,85 @@ export function MapView() {
   }, []);
 
   // Solo los autos que tienen coordenadas guardadas
-  const located = sightings.filter(
-    (s) => s.latitude != null && s.longitude != null,
+  const located = useMemo(
+    () => sightings.filter((s) => s.latitude != null && s.longitude != null),
+    [sightings],
   );
 
-  // Centra el mapa en el promedio de todas las ubicaciones
-  const center: [number, number] =
-    located.length > 0
-      ? [
-          located.reduce((sum, s) => sum + s.latitude!, 0) / located.length,
-          located.reduce((sum, s) => sum + s.longitude!, 0) / located.length,
-        ]
-      : DEFAULT_CENTER;
+  const points = useMemo<[number, number][]>(
+    () => located.map((s) => [s.latitude!, s.longitude!]),
+    [located],
+  );
 
-  const zoom = located.length > 0 ? 10 : DEFAULT_ZOOM;
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="bg-red-900/40 border border-red-700 rounded-xl px-4 py-3 w-full max-w-sm">
-          <p className="text-red-300 text-sm">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const subtitle = loading
+    ? 'Cargando…'
+    : located.length > 0
+      ? `${located.length} con ubicación`
+      : 'Ningún auto tiene ubicación todavía';
 
   return (
     <div className="flex flex-col h-full">
-      {located.length === 0 && (
-        <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
-          <p className="text-gray-500 text-xs text-center">
-            Ningún auto guardado tiene ubicación aún
-          </p>
+      <ScreenHeader title="Mapa" subtitle={subtitle} />
+
+      <div className="flex-1 px-5 pb-5 min-h-0">
+        <div className="h-full rounded-2xl overflow-hidden border border-line bg-surface">
+          {loading ? (
+            <div className="h-full flex items-center justify-center" role="status" aria-label="Cargando mapa">
+              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="h-full flex items-center justify-center px-6">
+              <p className="text-red-300 text-sm text-center">{error}</p>
+            </div>
+          ) : (
+            <MapContainer
+              center={DEFAULT_CENTER}
+              zoom={DEFAULT_ZOOM}
+              style={{ height: '100%', width: '100%' }}
+              zoomControl={false}
+            >
+              <FitToMarkers points={points} />
+
+              {/* OSM es gratis y sin API key; el modo oscuro se logra con un filtro
+                  CSS sobre los tiles (ver .leaflet-tile-pane en index.css). */}
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+
+              {located.map((s) => {
+                const label =
+                  [s.marca, s.modelo, s.año].filter(Boolean).join(' ') || 'Auto desconocido';
+
+                return (
+                  <Marker key={s.id} position={[s.latitude!, s.longitude!]} icon={PIN}>
+                    <Popup>
+                      <div className="flex flex-col gap-2 min-w-[170px]">
+                        {s.photo_url && (
+                          <img
+                            src={s.photo_url}
+                            alt=""
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                        )}
+                        <p className="font-semibold text-sm text-ink">{label}</p>
+                        {s.taken_at && (
+                          <p className="text-xs text-faint tnum">
+                            {new Date(s.taken_at).toLocaleDateString('es-ES', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MapContainer>
+          )}
         </div>
-      )}
-
-      {/* El mapa ocupa todo el espacio restante */}
-      <div className="flex-1">
-        <MapContainer
-          center={center}
-          zoom={zoom}
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={true}
-        >
-          {/* Tiles de OpenStreetMap — gratuitos, sin API key */}
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {located.map((s) => {
-            const label =
-              [s.marca, s.modelo, s.año].filter(Boolean).join(' ') ||
-              'Auto desconocido';
-
-            return (
-              <Marker
-                key={s.id}
-                position={[s.latitude!, s.longitude!]}
-              >
-                <Popup>
-                  <div className="flex flex-col gap-2 min-w-[160px]">
-                    {s.photo_url && (
-                      <img
-                        src={s.photo_url}
-                        alt={label}
-                        className="w-full h-24 object-cover rounded"
-                      />
-                    )}
-                    <p className="font-semibold text-sm text-gray-900">{label}</p>
-                    {s.taken_at && (
-                      <p className="text-xs text-gray-500">
-                        {new Date(s.taken_at).toLocaleDateString('es-ES', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
       </div>
     </div>
   );

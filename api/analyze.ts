@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { authorized, decodeJpeg, json } from './_lib.js';
+import { decodeJpeg, json } from './_lib.js';
 
 const SYSTEM_PROMPT =
   'You are an expert car identifier. Analyze the image and return ONLY a valid JSON object ' +
@@ -10,11 +10,10 @@ const SYSTEM_PROMPT =
   'If you cannot identify the car, return { "error": "No car detected" }. ' +
   'All string values in Spanish.';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY!);
+// Acepta el nombre viejo: el valor ya está en Vercel y los Secret no se pueden releer.
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_KEY ?? process.env.VITE_GOOGLE_AI_KEY ?? '');
 
 export async function POST(req: Request): Promise<Response> {
-  if (!authorized(req)) return json({ error: 'No autorizado' }, 401);
-
   const body = (await req.json().catch(() => null)) as { base64?: unknown } | null;
   const image = decodeJpeg(body?.base64);
   if (!image) return json({ error: 'Imagen inválida' }, 400);

@@ -1,5 +1,4 @@
-import { useState, type FormEvent } from 'react';
-import { getPassword, login } from './lib/api';
+import { useState } from 'react';
 import { Capture } from './pages/Capture';
 import { History } from './pages/History';
 import { MapView } from './pages/MapView';
@@ -8,9 +7,6 @@ type Tab = 'capture' | 'history' | 'map';
 
 export function App() {
   const [tab, setTab] = useState<Tab>('capture');
-  const [authed, setAuthed] = useState(() => getPassword() != null);
-
-  if (!authed) return <Login onSuccess={() => setAuthed(true)} />;
 
   return (
     <div className="flex flex-col h-full bg-gray-950">
@@ -60,46 +56,5 @@ export function App() {
         </button>
       </nav>
     </div>
-  );
-}
-
-function Login({ onSuccess }: { onSuccess: () => void }) {
-  const [password, setPasswordInput] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      if (await login(password)) onSuccess();
-      else setError('Contraseña incorrecta');
-    } catch {
-      setError('No se pudo conectar');
-    }
-    setBusy(false);
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 h-full justify-center px-6 bg-gray-950">
-      <h1 className="text-2xl font-bold text-white">CarSnap</h1>
-      <input
-        type="password"
-        autoComplete="current-password"
-        placeholder="Contraseña"
-        aria-label="Contraseña"
-        value={password}
-        onChange={(e) => setPasswordInput(e.target.value)}
-        className="w-full bg-gray-900 text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-violet-500"
-      />
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-      <button
-        disabled={busy || !password}
-        className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition-colors"
-      >
-        {busy ? 'Entrando…' : 'Entrar'}
-      </button>
-    </form>
   );
 }

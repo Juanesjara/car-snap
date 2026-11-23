@@ -28,7 +28,7 @@ export function History() {
     <>
       <div className="flex flex-col h-full overflow-y-auto">
         {/* Header */}
-        <div className="px-4 pt-safe pt-6 pb-4 shrink-0">
+        <div className="px-4 pt-6 pb-4 shrink-0">
           <h1 className="text-2xl font-bold text-white">Historial</h1>
           <p className="text-gray-500 text-sm">{sightings.length} autos guardados</p>
         </div>
